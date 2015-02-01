@@ -1,5 +1,4 @@
 #include <iostream>
-using namespace std;
 
 // GLEW
 #define GLEW_STATIC
@@ -84,7 +83,7 @@ public:
 		if (!vertexsuccess)
 		{
 			glGetShaderInfoLog(vertex_shader, 512, NULL, infoLog);
-			cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 		}
 
 		GLint fragmentsuccess;
@@ -94,7 +93,7 @@ public:
 		if (!fragmentsuccess)
 		{
 			glGetShaderInfoLog(fragment_shader, 512, NULL, infoLog2);
-			cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog2 << endl;
+			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog2 << std::endl;
 		}
 	}
 
@@ -142,7 +141,7 @@ public:
 	// Is called whenever a key is pressed/released via GLFW
 	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
 	{
-		cout << key << endl;
+		std::cout << key << std::endl;
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 			glfwSetWindowShouldClose(window, GL_TRUE);
 	}
@@ -168,9 +167,6 @@ int main()
 
 	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr); // Windowed
 	glfwMakeContextCurrent(window);
-
-	// Set the required callback functions
-	//glfwSetKeyCallback(window, key_callback);
 
 	// Initialize GLEW to setup the OpenGL Function pointers
 	glewExperimental = GL_TRUE;
