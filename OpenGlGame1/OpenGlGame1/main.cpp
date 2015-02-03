@@ -7,13 +7,12 @@
 // GLFW
 #include <GL/glfw3.h>
 
-// Function prototypes
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+#include "Square.h"
+#include <vector>
 
 class Game1
 {
 public:
-	
 	Game1(GLFWwindow * renderwindow)
 	{
 		window = renderwindow;
@@ -31,6 +30,7 @@ public:
 
 		glfwTerminate();
 	}
+
 	void compile_shaders()
 	{
 		GLuint vertex_shader;
@@ -41,22 +41,26 @@ public:
 		{
 			"#version 330 core									\n"
 			"                                                   \n"
-			"in vec3 position;									\n"
+			"layout (location = 0) in vec3 position;			\n"
+			"uniform vec4 color;								\n"
+			"uniform vec3 offset;                               \n"
+			"out vec4 vs_color;									\n"
 			"void main()									    \n"
 			"{													\n"
-			"	gl_Position = vec4(position,1.0f);				\n"
+			"	gl_Position = vec4(position + offset,1.0f);		\n"
+			"	vs_color = color;								\n"
 			"}													\n"
 		};
 
 		static const GLchar * fragment_shader_source[] =
 		{
 			"#version 330 core									\n"
-			"													\n"
+			"in  vec4 vs_color;									\n"
 			"out vec4 color;                                    \n"
 			"													\n"
 			"void main()                                        \n"
 			"{                                                  \n"
-			"	color = vec4(0.3f, 0.0f, 0.0f, 1.0f);    		\n"
+			"	color = vs_color;					    		\n"
 			"}													\n"
 		};
 
@@ -96,55 +100,43 @@ public:
 			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog2 << std::endl;
 		}
 	}
-
 	
 	void Initialize()
 	{
 		compile_shaders();
-
-		float data[] = {
-			-0.25f, -0.25f, 0.0f,
-			0.25f, 0.25f, 0.0f,
-			0.25f, -0.25f, 0.0f,
-
-			-0.25f, 0.25f, 0.0f,
-			-0.25f, -0.25f, 0.0f,
-			0.25f, 0.25f, 0.0f
-		};
-		
-		glGenVertexArrays(1, &VAO);
-		glBindVertexArray(VAO);
-
-		glGenBuffers(1, &VBO);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
-
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*)0);
-		glEnableVertexAttribArray(0);
-		glBindVertexArray(0);
 	}
 	
 	void Render()
 	{
-		
-		glBindVertexArray(VAO);
-		// Render
-		// Clear the colorbuffer
-		const GLfloat color[] = { /*sin(glfwGetTime()) * 0.5 + */0.5, 0.3f, 0.6f, 1.0f };
+		const GLfloat color[] = { 0.0, 0.0f, 0.0f, 1.0f };
 		glClearBufferfv(GL_COLOR, 0, color);
-		glUseProgram(shader_program);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		
+		//Calculate the time between the previous loop call and this loop call
+		float time = glfwGetTime();
+		float deltaTime = time - previoustime;
+		previoustime = time;
+
+		timer += deltaTime;
+
+		if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		{
+			double x, y;
+			glfwGetCursorPos(window, &x, &y);
+			
+			squares.push_back(Square((x/1024 - .5) *2, (y/768 -.5) * -2, 0.005, 0.005));
+		}
+
+		for (int i = 0; i < squares.size(); ++i)
+		{			
+			//Update and draw the squares
+			squares[i].Update(deltaTime);
+			squares[i].Draw(shader_program);
+		}
+
 		// Swap the buffers
 		glfwSwapBuffers(window);
 	}
 	
-	// Is called whenever a key is pressed/released via GLFW
-	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-	{
-		std::cout << key << std::endl;
-		if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-			glfwSetWindowShouldClose(window, GL_TRUE);
-	}
 	
 private:
 
@@ -153,6 +145,10 @@ private:
 	GLuint VAO;
 	GLuint VBO;
 
+	std::vector<Square> squares;
+	
+	float previoustime = glfwGetTime();
+	float timer;
 };
 
 // The MAIN function, from here we start our application and run our Program/Game loop
@@ -165,7 +161,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr); // Windowed
+	GLFWwindow* window = glfwCreateWindow(1024, 768, "LearnOpenGL", nullptr, nullptr); // Windowed
 	glfwMakeContextCurrent(window);
 
 	// Initialize GLEW to setup the OpenGL Function pointers
@@ -173,7 +169,7 @@ int main()
 	glewInit();
 
 	// Define the viewport dimensions
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, 1024, 768);
 
 	Game1 game(window);
 	
